@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.oa.dao.OaTaskRecordDao">
+    
+	<sql id="oaTaskRecordColumns">
+		a.id AS "id",
+		a.oa_task_id AS "oaTask.id",
+		a.title AS "title",
+		a.content AS "content",
+		a.files AS "files",
+		a.send_user_id AS "sendUser.id",
+		a.rece_user_id AS "receUser.id",
+		a.send_date AS "sendDate",
+		a.read_flag AS "readFlag",
+		a.read_date AS "readDate",
+		a.forward_flag AS "forwardFlag",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag",
+		a.complete_flag AS "completeFlag",
+		a.year AS "year",
+		a.month AS "month",
+		a.day AS "day",
+		u7.name AS "receUser.name",
+		u8.name AS "sendUser.name"
+	</sql>
+	
+	<sql id="oaTaskRecordJoins">
+		LEFT JOIN sys_user u7 ON u7.id = a.rece_user_id
+		LEFT JOIN sys_user u8 ON u8.id = a.send_user_id
+		LEFT JOIN oa_task b ON b.id = a.oa_task_id
+	</sql>
+    
+	<select id="get" resultType="OaTaskRecord">
+		SELECT 
+			<include refid="oaTaskRecordColumns"/>
+		FROM oa_task_record a
+		<include refid="oaTaskRecordJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="OaTaskRecord">
+		SELECT 
+			<include refid="oaTaskRecordColumns"/>
+		FROM oa_task_record a
+		<include refid="oaTaskRecordJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="oaTask != null and oaTask.id != null and oaTask.id != ''">
+				AND a.oa_task_id = #{oaTask.id}
+			</if>
+			<if test="title != null and title != ''">
+				AND a.title LIKE 
+					<if test="dbName == 'oracle'">'%'||#{title}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{title}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{title},'%')</if>
+			</if>
+			<if test="sendUser != null and sendUser.id != null and sendUser.id != ''">
+				AND a.send_user_id = #{sendUser.id}
+			</if>
+			<if test="receUser != null and receUser.id != null and receUser.id != ''">
+				AND a.rece_user_id = #{receUser.id}
+			</if>
+			<if test="readFlag != null and readFlag != ''">
+				AND a.read_flag = #{readFlag}
+			</if>
+			<if test="forwardFlag != null and forwardFlag != ''">
+				AND a.forward_flag = #{forwardFlag}
+			</if>
+			<if test="completeFlag != null and completeFlag != ''">
+				AND(a.complete_flag = #{completeFlag} OR a.complete_flag = #{notFlag})
+			</if>
+			<if test="year != null and year != ''">
+				AND a.year = #{year}
+			</if>
+			<if test="month != null and month != ''">
+				AND a.month = #{month}
+			</if>
+			<if test="day != null and day != ''">
+				AND a.day = #{day}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				order by a.send_date desc
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="OaTaskRecord">
+		SELECT 
+			<include refid="oaTaskRecordColumns"/>
+		FROM oa_task_record a
+		<include refid="oaTaskRecordJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO oa_task_record(
+			id,
+			oa_task_id,
+			title,
+			content,
+			files,
+			send_user_id,
+			rece_user_id,
+			send_date,
+			read_flag,
+			read_date,
+			forward_flag,
+			remarks,
+			del_flag,
+			complete_flag,
+			year,
+			month,
+			day
+		) VALUES (
+			#{id},
+			#{oaTask.id},
+			#{title},
+			#{content},
+			#{files},
+			#{sendUser.id},
+			#{receUser.id},
+			#{sendDate},
+			#{readFlag},
+			#{readDate},
+			#{forwardFlag},
+			#{remarks},
+			#{delFlag},
+			#{completeFlag},
+			#{year},
+			#{month},
+			#{day}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE oa_task_record SET 	
+			files = #{files},
+			rece_user_id = #{receUser.id},
+			remarks = #{remarks},
+			complete_flag = #{completeFlag},
+			year = #{year},
+			month = #{month},
+			day = #{day}
+		WHERE id = #{id}
+	</update>
+
+
+	<!--更新任务状态-->
+	<update id="updateFlag">
+		UPDATE oa_task_record SET
+			complete_flag = #{completeFlag}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE oa_task_record SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+
+
+	<update id="updateTsakinfo">
+		UPDATE oa_task_record SET
+			send_user_id = #{sendUser.id},
+			title = #{title},
+			content = #{content},
+			send_date = #{sendDate}
+		WHERE id = #{id}
+	</update>
+
+</mapper>
